@@ -1,5 +1,6 @@
 import cv2
 import pygame
+import math
 
 
 HAND_CONNECTIONS = [
@@ -58,7 +59,6 @@ class Renderer:
             32
         )
 
-
     # ========================================================
     # CÂMERA
     # ========================================================
@@ -88,7 +88,6 @@ class Renderer:
             (0, 0)
         )
 
-
     # ========================================================
     # MÃO
     # ========================================================
@@ -115,14 +114,12 @@ class Renderer:
                 (x, y)
             )
 
-
         # ----------------------------------------------------
         # PROTEÇÃO
         # ----------------------------------------------------
 
         if len(points) != 21:
             return
-
 
         # ----------------------------------------------------
         # COR DA MÃO
@@ -135,7 +132,6 @@ class Renderer:
         else:
 
             line_color = (255, 0, 255)
-
 
         # ====================================================
         # CONEXÕES
@@ -150,7 +146,6 @@ class Renderer:
                 line_color,
                 2
             )
-
 
         # ====================================================
         # LANDMARKS
@@ -172,7 +167,6 @@ class Renderer:
                 -1
             )
 
-
         # ====================================================
         # INDICADOR
         # ====================================================
@@ -185,7 +179,6 @@ class Renderer:
             2
         )
 
-
     # ========================================================
     # OBJETO
     # ========================================================
@@ -196,14 +189,14 @@ class Renderer:
         object_y,
         object_size,
         is_grabbing,
-        is_hovering
+        is_hovering,
+        rotation
     ):
 
         object_position = (
             int(object_x),
             int(object_y)
         )
-
 
         # ----------------------------------------------------
         # GRABBED
@@ -233,7 +226,6 @@ class Renderer:
                 8
             )
 
-
         # ----------------------------------------------------
         # HOVER
         # ----------------------------------------------------
@@ -255,7 +247,6 @@ class Renderer:
                 object_size // 2
             )
 
-
         # ----------------------------------------------------
         # NORMAL
         # ----------------------------------------------------
@@ -269,6 +260,42 @@ class Renderer:
                 object_size // 2
             )
 
+        # ====================================================
+        # REFERÊNCIA DE ROTAÇÃO
+        # ====================================================
+
+        radius = object_size // 2
+
+        angle_rad = math.radians(
+            rotation
+        )
+
+        line_length = radius * 0.75
+
+        end_x = int(
+            object_x +
+            math.cos(angle_rad) * line_length
+        )
+
+        end_y = int(
+            object_y +
+            math.sin(angle_rad) * line_length
+        )
+
+        pygame.draw.line(
+            self.screen,
+            (255, 255, 255),
+            object_position,
+            (end_x, end_y),
+            4
+        )
+
+        pygame.draw.circle(
+        self.screen,
+        (255, 255, 255),
+        (end_x, end_y),
+        6
+)
 
     # ========================================================
     # HUD
@@ -294,7 +321,6 @@ class Renderer:
             (20, 20)
         )
 
-
         right_text = self.font.render(
             f"RIGHT: {right_gesture}",
             True,
@@ -305,7 +331,6 @@ class Renderer:
             right_text,
             (20, 55)
         )
-
 
         fps_text = self.font.render(
             f"FPS: {fps}",
@@ -318,7 +343,6 @@ class Renderer:
             (20, 90)
         )
 
-
         if is_grabbing:
 
             object_state = "GRABBED"
@@ -330,7 +354,6 @@ class Renderer:
         else:
 
             object_state = "FREE"
-
 
         object_text = self.font.render(
             f"OBJECT: {object_state}",

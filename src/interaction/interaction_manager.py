@@ -34,9 +34,28 @@ class InteractionManager:
 
         self.smoothing = smoothing
 
+        # =================================================
+        # ESTADOS
+        # =================================================
+
         self.is_grabbing = False
         self.is_hovering = False
         self.is_scaling = False
+        self.is_rotating = False
+
+        # =================================================
+        # ROTAÇÃO
+        # =================================================
+
+        self.rotation = 0.0
+
+        self.initial_hand_angle = 0.0
+
+        self.initial_object_rotation = 0.0
+
+        # =================================================
+        # MOVIMENTO
+        # =================================================
 
         self.grab_offset_x = 0
         self.grab_offset_y = 0
@@ -264,6 +283,104 @@ class InteractionManager:
         self.is_scaling = False
 
     # ====================================================
+    # ROTAÇÃO
+    # ====================================================
+
+    def update_rotation(
+        self,
+        hand_angle,
+        gesture
+    ):
+
+        # ---------------------------------------------
+        # SÓ ROTACIONA COM CLAW
+        # ---------------------------------------------
+
+        if gesture != "CLAW":
+
+            self.stop_rotation()
+
+            return
+
+        # ---------------------------------------------
+        # INÍCIO DA ROTAÇÃO
+        # ---------------------------------------------
+
+        if not self.is_rotating:
+
+            self.is_rotating = True
+
+            self.initial_hand_angle = (
+                hand_angle
+            )
+
+            self.initial_object_rotation = (
+                self.rotation
+            )
+
+            # Enquanto a mão estiver sendo usada
+            # para rotação, ela não controla movimento.
+
+            self.is_grabbing = False
+
+            return
+
+        # ---------------------------------------------
+        # DIFERENÇA ANGULAR
+        # ---------------------------------------------
+
+        angle_difference = (
+            hand_angle -
+            self.initial_hand_angle
+        )
+
+        # ---------------------------------------------
+        # NORMALIZAÇÃO ANGULAR
+        #
+        # Mantém a diferença entre -180° e +180°.
+        #
+        # Isso evita um salto caso o ângulo atravesse
+        # a fronteira entre 180° e -180°.
+        # ---------------------------------------------
+
+        if angle_difference > 180:
+
+            angle_difference -= 360
+
+        elif angle_difference < -180:
+
+            angle_difference += 360
+
+        # ---------------------------------------------
+        # ROTAÇÃO DESEJADA
+        # ---------------------------------------------
+
+        target_rotation = (
+            self.initial_object_rotation
+            +
+            angle_difference
+        )
+
+        # ---------------------------------------------
+        # SUAVIZAÇÃO
+        # ---------------------------------------------
+
+        self.rotation = self.lerp(
+            self.rotation,
+            target_rotation
+        )
+
+    # ====================================================
+    # FINALIZA ROTAÇÃO
+    # ====================================================
+
+    def stop_rotation(self):
+
+        self.is_rotating = False
+
+        self.initial_hand_angle = 0.0
+
+    # ====================================================
     # RELEASE
     # ====================================================
 
@@ -273,6 +390,7 @@ class InteractionManager:
         self.is_hovering = False
 
         self.stop_scale()
+        self.stop_rotation()
 
     # ====================================================
     # ESTADO
@@ -281,13 +399,20 @@ class InteractionManager:
     @property
     def object_state(self):
 
+        if self.is_rotating:
+
+            return "ROTATING"
+
         if self.is_scaling:
+
             return "SCALING"
 
         if self.is_grabbing:
+
             return "GRABBED"
 
         if self.is_hovering:
+
             return "HOVER"
 
         return "FREE"

@@ -72,8 +72,6 @@ class GestureDetector:
             (magnitude_ba * magnitude_bc)
         )
 
-        # Evita pequenos erros numéricos
-        # causarem erro no acos().
         cosine = max(
             -1.0,
             min(
@@ -85,6 +83,40 @@ class GestureDetector:
         return math.degrees(
             math.acos(cosine)
         )
+
+    # ========================================================
+    # ÂNGULO DA MÃO
+    #
+    # Usa:
+    #
+    # landmark 0 → pulso
+    # landmark 9 → centro da palma
+    #
+    # O vetor pulso → palma representa a orientação
+    # da mão no plano da câmera.
+    #
+    # Retorna:
+    #
+    # -180° até +180°
+    # ========================================================
+
+    def get_hand_angle(self, landmarks):
+
+        wrist = landmarks[0]
+
+        palm = landmarks[9]
+
+        dx = palm.x - wrist.x
+        dy = palm.y - wrist.y
+
+        angle = math.degrees(
+            math.atan2(
+                dy,
+                dx
+            )
+        )
+
+        return angle
 
     # ========================================================
     # VERIFICA SE UM DEDO ESTÁ ESTENDIDO
@@ -172,6 +204,7 @@ class GestureDetector:
     def is_pinch(self, landmarks):
 
         thumb_tip = landmarks[4]
+
         index_tip = landmarks[8]
 
         distance = self.distance(
@@ -184,34 +217,10 @@ class GestureDetector:
     # ========================================================
     # DETECTA CLAW
     #
-    # Agora usamos os ângulos das articulações.
-    #
-    # Um dedo estendido:
-    #
-    #       TIP
-    #        |
-    #       PIP
-    #        |
-    #       MCP
-    #
-    # → ângulo próximo de 180°
-    #
-    # Um dedo dobrado:
-    #
-    #       TIP
-    #        \
-    #        PIP
-    #          \
-    #          MCP
-    #
-    # → ângulo menor.
+    # Usa os ângulos das articulações.
     # ========================================================
 
     def is_claw(self, landmarks):
-
-        # ----------------------------------------------------
-        # ÂNGULOS DOS QUATRO DEDOS
-        # ----------------------------------------------------
 
         index_angle = self.angle(
             landmarks[8],
@@ -236,13 +245,6 @@ class GestureDetector:
             landmarks[18],
             landmarks[17]
         )
-
-        # ----------------------------------------------------
-        # Um CLAW possui dedos curvados.
-        #
-        # Não queremos exigir um único ângulo exato,
-        # porque a mão pode estar em diferentes posições.
-        # ----------------------------------------------------
 
         max_open_angle = 150.0
 
@@ -269,13 +271,6 @@ class GestureDetector:
             pinky_curved
         ])
 
-        # ----------------------------------------------------
-        # Precisamos de pelo menos 3 dedos curvados.
-        #
-        # Isso permite alguma imperfeição no tracking sem
-        # destruir o gesto.
-        # ----------------------------------------------------
-
         return curved_fingers >= 3
 
     # ========================================================
@@ -286,8 +281,6 @@ class GestureDetector:
 
         # ----------------------------------------------------
         # PINCH
-        #
-        # Tem prioridade sobre todos os outros gestos.
         # ----------------------------------------------------
 
         if self.is_pinch(landmarks):
@@ -355,7 +348,7 @@ class GestureDetector:
         if self.is_claw(landmarks):
 
             return "CLAW"
-        
+
         # ----------------------------------------------------
         # DESCONHECIDO
         # ----------------------------------------------------

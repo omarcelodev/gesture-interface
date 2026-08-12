@@ -167,6 +167,7 @@ while running:
     right_gesture = "NO HAND"
 
     left_openness = 0.0
+    right_angle = 0.0
 
     # ========================================================
     # SEPARA AS MÃOS
@@ -208,15 +209,13 @@ while running:
             right_hand.landmarks
         )
 
-        claw_openness = (
-            gesture_detector.get_hand_openness(
-                right_hand.landmarks
-            )
-        )   
+        right_angle = gesture_detector.get_hand_angle(
+            right_hand.landmarks
+        )
 
         print(
             f"GESTURE: {right_gesture} | "
-            f"OPENNESS: {claw_openness:.3f}"
+            f"ANGLE: {right_angle:.2f}°"
         )
 
     # ========================================================
@@ -264,6 +263,30 @@ while running:
         interaction_manager.stop_scale()
 
     # ========================================================
+    # ROTAÇÃO PELA MÃO DIREITA
+    #
+    # MÃO DIREITA + CLAW → ROTAÇÃO
+    # ========================================================
+
+    if right_hand and right_gesture == "CLAW":
+
+        interaction_manager.update_rotation(
+            right_angle,
+            right_gesture
+        )
+
+    else:
+
+        interaction_manager.stop_rotation()   
+
+    print(
+        f"GESTURE: {right_gesture} | "
+        f"HAND ANGLE: {right_angle:.2f}° | "
+        f"ROTATION: "
+        f"{interaction_manager.rotation:.2f}°"
+    )
+
+    # ========================================================
     # DESENHA AS MÃOS
     # ========================================================
 
@@ -291,7 +314,9 @@ while running:
         interaction_manager.object_y,
         interaction_manager.object_size,
         interaction_manager.is_grabbing,
-        interaction_manager.is_hovering
+        interaction_manager.is_hovering,
+        interaction_manager.rotation
+
     )
 
     # ========================================================
