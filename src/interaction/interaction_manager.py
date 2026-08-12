@@ -15,6 +15,20 @@ class InteractionManager:
 
         self.object_size = object_size
 
+        self.initial_object_size = object_size
+
+        # =================================================
+        # LIMITES DE ESCALA
+        # =================================================
+
+        self.min_object_size = (
+            object_size * 0.5
+        )
+
+        self.max_object_size = (
+            object_size * 3.0
+        )
+
         self.width = width
         self.height = height
 
@@ -22,6 +36,7 @@ class InteractionManager:
 
         self.is_grabbing = False
         self.is_hovering = False
+        self.is_scaling = False
 
         self.grab_offset_x = 0
         self.grab_offset_y = 0
@@ -92,7 +107,7 @@ class InteractionManager:
         return x, y
 
     # ====================================================
-    # PROCESSAMENTO
+    # INTERAÇÃO NORMAL
     # ====================================================
 
     def update(
@@ -101,7 +116,7 @@ class InteractionManager:
         index_y,
         gesture
     ):
-        
+
         if gesture == "NO HAND":
 
             self.is_grabbing = False
@@ -181,17 +196,93 @@ class InteractionManager:
 
             self.is_grabbing = False
 
+    # ====================================================
+    # ESCALA PELA ABERTURA DA MÃO
+    # ====================================================
+
+    def update_scale(
+        self,
+        openness
+    ):
+
+        self.is_scaling = True
+
+        # ---------------------------------------------
+        # GARANTE VALOR ENTRE 0 E 1
+        # ---------------------------------------------
+
+        openness = max(
+            0.0,
+            min(
+                openness,
+                1.0
+            )
+        )
+
+        # ---------------------------------------------
+        # CONVERTE ABERTURA EM TAMANHO
+        # ---------------------------------------------
+
+        target_size = (
+            self.min_object_size
+            +
+            (
+                self.max_object_size
+                -
+                self.min_object_size
+            )
+            * openness
+        )
+
+        # ---------------------------------------------
+        # SUAVIZAÇÃO
+        # ---------------------------------------------
+
+        self.object_size = self.lerp(
+            self.object_size,
+            target_size
+        )
+
+        # ---------------------------------------------
+        # GARANTE OS LIMITES
+        # ---------------------------------------------
+
+        self.object_size = max(
+            self.min_object_size,
+            min(
+                self.object_size,
+                self.max_object_size
+            )
+        )
+
+    # ====================================================
+    # FINALIZA ESCALA
+    # ====================================================
+
+    def stop_scale(self):
+
+        self.is_scaling = False
+
+    # ====================================================
+    # RELEASE
+    # ====================================================
+
     def release(self):
 
         self.is_grabbing = False
         self.is_hovering = False
-        
+
+        self.stop_scale()
+
     # ====================================================
     # ESTADO
     # ====================================================
 
     @property
     def object_state(self):
+
+        if self.is_scaling:
+            return "SCALING"
 
         if self.is_grabbing:
             return "GRABBED"

@@ -6,7 +6,6 @@ class GestureDetector:
     def __init__(self):
         pass
 
-
     # ========================================================
     # DISTÂNCIA ENTRE DOIS PONTOS
     # ========================================================
@@ -21,15 +20,93 @@ class GestureDetector:
             dy ** 2
         )
 
-
     # ========================================================
     # VERIFICA SE UM DEDO ESTÁ ESTENDIDO
     # ========================================================
 
-    def finger_is_open(self, landmarks, tip, pip):
+    def finger_is_open(
+        self,
+        landmarks,
+        tip,
+        pip
+    ):
 
         return landmarks[tip].y < landmarks[pip].y
 
+    # ========================================================
+    # ABERTURA DA MÃO
+    #
+    # Retorna um valor entre 0.0 e 1.0
+    #
+    # 0.0 = mão fechada
+    # 1.0 = mão aberta
+    # ========================================================
+
+    def get_hand_openness(self, landmarks):
+
+        wrist = landmarks[0]
+
+        palm_reference = landmarks[9]
+
+        palm_size = self.distance(
+            wrist,
+            palm_reference
+        )
+
+        if palm_size <= 0:
+
+            return 0.0
+
+        finger_tips = [
+            landmarks[8],
+            landmarks[12],
+            landmarks[16],
+            landmarks[20]
+        ]
+
+        total_openness = 0.0
+
+        for tip in finger_tips:
+
+            finger_distance = self.distance(
+                wrist,
+                tip
+            )
+
+            normalized_distance = (
+                finger_distance /
+                palm_size
+            )
+
+            # ---------------------------------------------
+            # Valores aproximados:
+            #
+            # mão fechada → ~1.0
+            # mão aberta  → ~2.0+
+            #
+            # Transformamos isso em 0.0 → 1.0
+            # ---------------------------------------------
+
+            finger_openness = (
+                normalized_distance - 1.0
+            )
+
+            finger_openness = max(
+                0.0,
+                min(
+                    finger_openness,
+                    1.0
+                )
+            )
+
+            total_openness += finger_openness
+
+        openness = (
+            total_openness /
+            len(finger_tips)
+        )
+
+        return openness
 
     # ========================================================
     # DETECTA PINCH
@@ -47,7 +124,6 @@ class GestureDetector:
 
         return distance < 0.08
 
-
     # ========================================================
     # DETECTA GESTO
     # ========================================================
@@ -61,7 +137,6 @@ class GestureDetector:
         if self.is_pinch(landmarks):
 
             return "PINCH"
-
 
         # ----------------------------------------------------
         # DEDOS
@@ -91,7 +166,6 @@ class GestureDetector:
             18
         )
 
-
         # ----------------------------------------------------
         # MÃO ABERTA
         # ----------------------------------------------------
@@ -104,7 +178,6 @@ class GestureDetector:
         ):
 
             return "OPEN_HAND"
-
 
         # ----------------------------------------------------
         # INDICADOR
@@ -119,7 +192,6 @@ class GestureDetector:
 
             return "POINT"
 
-
         # ----------------------------------------------------
         # PUNHO
         # ----------------------------------------------------
@@ -132,7 +204,6 @@ class GestureDetector:
         ):
 
             return "FIST"
-
 
         # ----------------------------------------------------
         # DESCONHECIDO

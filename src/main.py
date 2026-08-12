@@ -166,6 +166,8 @@ while running:
     left_gesture = "NO HAND"
     right_gesture = "NO HAND"
 
+    left_openness = 0.0
+
     # ========================================================
     # SEPARA AS MÃOS
     # ========================================================
@@ -190,6 +192,12 @@ while running:
             left_hand.landmarks
         )
 
+        left_openness = (
+            gesture_detector.get_hand_openness(
+                left_hand.landmarks
+            )
+    )
+
     # ========================================================
     # GESTO DA MÃO DIREITA
     # ========================================================
@@ -203,7 +211,8 @@ while running:
     # ========================================================
     # INTERAÇÃO COM O OBJETO
     #
-    # SOMENTE A MÃO DIREITA CONTROLA A BOLINHA
+    # MÃO DIREITA → GRAB / MOVE
+    # MÃO ESQUERDA → SCALE
     # ========================================================
 
     if right_hand:
@@ -226,10 +235,22 @@ while running:
 
     else:
 
-        # Se a mão direita desaparecer,
-        # soltamos o objeto.
-
         interaction_manager.release()
+
+
+    # ========================================================
+    # ESCALA PELA MÃO ESQUERDA
+    # ========================================================
+
+    if left_hand:
+
+        interaction_manager.update_scale(
+            left_openness
+        )
+
+    else:
+
+        interaction_manager.stop_scale()
 
     # ========================================================
     # DESENHA AS MÃOS
@@ -257,7 +278,7 @@ while running:
     renderer.draw_object(
         interaction_manager.object_x,
         interaction_manager.object_y,
-        OBJECT_SIZE,
+        interaction_manager.object_size,
         interaction_manager.is_grabbing,
         interaction_manager.is_hovering
     )
