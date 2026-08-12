@@ -208,6 +208,17 @@ while running:
             right_hand.landmarks
         )
 
+        claw_openness = (
+            gesture_detector.get_hand_openness(
+                right_hand.landmarks
+            )
+        )   
+
+        print(
+            f"GESTURE: {right_gesture} | "
+            f"OPENNESS: {claw_openness:.3f}"
+        )
+
     # ========================================================
     # INTERAÇÃO COM O OBJETO
     #
